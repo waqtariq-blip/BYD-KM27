@@ -1,0 +1,728 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Karachi Marathon Race Village 3D</title>
+<meta name="description" content="Interactive 3D layout of the Karachi Marathon race village and route.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/cesium@1.120.0/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/cesium@1.120.0/Build/Cesium/Cesium.js"></script>
+<style>
+:root{--bg:rgba(9,12,15,.86);--line:rgba(255,255,255,.1);--tx:#eef2f1;--mu:#93a19d;--ac:#7fe3c9;--ac2:#2bb594}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#0a0d10;color:var(--tx);font-family:Archivo,system-ui,sans-serif;overflow:hidden}
+#c{position:absolute;inset:0}
+.cesium-viewer-bottom{left:auto!important;right:8px!important;bottom:4px!important}
+.cesium-widget-credits{font-size:10px}
+button{font:inherit;color:inherit;cursor:pointer}
+#panel{position:absolute;top:16px;left:16px;width:300px;max-height:calc(100% - 32px);display:flex;flex-direction:column;background:var(--bg);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:14px;overflow:hidden;z-index:5}
+#panel header{padding:16px 16px 12px;border-bottom:1px solid var(--line)}
+.kick{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ac);font-weight:600}
+h1{margin:4px 0 2px;font-size:21px;font-weight:800;letter-spacing:-.01em;line-height:1.15}
+.sub{font-size:12.5px;color:var(--mu)}
+.acts{display:flex;gap:6px;padding:12px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.btn{background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12.5px;font-weight:600}
+.btn:hover{background:rgba(255,255,255,.13)}
+.btn.pri{background:var(--ac);color:#06201a;border-color:var(--ac)}
+.btn.pri:hover{background:#9ef0da}
+.btn.on{border-color:var(--ac);color:var(--ac)}
+#list{overflow:auto;padding:6px 8px 12px}
+.grp{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mu);padding:12px 8px 4px;font-weight:600}
+.item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:7px 8px;font-size:13.5px}
+.item:hover,.item.sel{background:rgba(127,227,201,.12)}
+.dot{width:9px;height:9px;border-radius:3px;flex:none}
+.toggles{display:flex;gap:6px;padding:0 16px 12px;flex-wrap:wrap}
+#card{position:absolute;right:16px;top:16px;width:320px;background:var(--bg);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:14px;padding:16px 18px;z-index:5;display:none}
+#card h2{margin:4px 0 8px;font-size:19px;font-weight:800}
+#card p{margin:0 0 10px;font-size:13.5px;line-height:1.5;color:#cfd8d5}
+.meta{display:flex;gap:16px;font-size:12px;color:var(--mu)}
+.meta b{display:block;color:var(--tx);font-size:14px;font-weight:600}
+.x{position:absolute;right:10px;top:8px;background:none;border:0;color:var(--mu);font-size:20px}
+#cap{position:absolute;left:50%;bottom:34px;transform:translateX(-50%);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 18px;max-width:min(560px,calc(100% - 32px));z-index:6;display:none;text-align:center}
+#cap .kick{display:block;margin-bottom:3px}
+#cap span.t{font-size:15px;font-weight:600}
+#cap .bar{height:2px;background:rgba(255,255,255,.1);margin-top:10px;border-radius:2px;overflow:hidden}
+#cap .bar i{display:block;height:100%;width:0;background:var(--ac)}
+#loader{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:#0a0d10;z-index:20;transition:opacity .6s}
+#loader .ring{width:38px;height:38px;border:3px solid rgba(127,227,201,.2);border-top-color:var(--ac);border-radius:50%;animation:sp 1s linear infinite}
+#loader .msg{font-size:13px;color:var(--mu);max-width:420px;text-align:center;padding:0 16px}
+@keyframes sp{to{transform:rotate(360deg)}}
+#mtoggle{display:none}
+.credit{font-size:10.5px;color:var(--mu);padding:8px 16px 12px;border-top:1px solid var(--line);line-height:1.4}.credit a{color:var(--mu)}
+@media (max-width:720px){
+ #panel{top:auto;bottom:0;left:0;right:0;width:auto;max-height:52%;border-radius:14px 14px 0 0}
+ #panel.min #list,#panel.min .toggles{display:none}
+ #mtoggle{display:inline-block;margin-left:auto}
+ #card{left:12px;right:12px;width:auto;top:12px}
+ #cap{bottom:auto;top:12px}
+ h1{font-size:18px}
+}
+</style>
+</head>
+<body>
+<div id="c"></div>
+<div id="loader"><div class="ring"></div><div class="msg" id="lmsg">Loading 3D city of Karachi…</div></div>
+
+<aside id="panel">
+ <header>
+  <div class="kick">Karachi Marathon</div>
+  <h1>Race Village · 3D Layout</h1>
+  <div class="sub">Sea View, Clifton · drag to orbit, click any structure</div>
+ </header>
+ <div class="acts">
+  <button class="btn pri" id="bTour">▶ Play tour</button>
+  <button class="btn" id="bOver">Overview</button>
+  <button class="btn" id="bRoute">Route</button>
+  <button class="btn" id="mtoggle">☰</button>
+ </div>
+ <div class="toggles">
+  <button class="btn on" id="tLab">Labels</button>
+  <button class="btn on" id="tFoot">Footprints</button>
+  <button class="btn on" id="tRoute">Route line</button>
+ </div>
+ <div id="list"></div>
+ <div class="credit">Car models: "2024 BYD Seal" and "2024 BYD Atto 3" by <a href="https://sketchfab.com/ddiaz-design" target="_blank" rel="noopener">Ddiaz Design</a>, <a href="http://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>, compressed.</div>
+</aside>
+
+<div id="card"><button class="x" id="cx" aria-label="Close">×</button><div class="kick" id="cg"></div><h2 id="ct"></h2><p id="cd"></p><div class="meta" id="cm"></div></div>
+<div id="cap"><span class="kick" id="capk"></span><span class="t" id="capt"></span><div class="bar"><i id="capb"></i></div></div>
+
+<script>window.CAR_GLB={seal:{uri:'cars/byd_seal.glb',scale:1},atto:{uri:'cars/byd_atto3.glb',scale:1}};</script>
+<script>
+const GKEY = 'AIzaSyBlqBqG9Ka7qg4l6hvkPN-uu5WtcQBolQQ';
+const CFG = {"byd_zone":{"lon":67.0353617,"lat":24.7980305,"len":36.9,"wid":35.9,"brg":11,"poly":[[67.0353361,24.7978648],[67.0354068,24.7978612],[67.0354656,24.7978847],[67.0355137,24.7979234],[67.0355323,24.797981],[67.0355444,24.798038],[67.0355282,24.7980966],[67.0354931,24.7981504],[67.0354293,24.7981887],[67.0353515,24.7981977],[67.0352784,24.7981807],[67.0352235,24.7981259],[67.035185,24.798051],[67.0351925,24.7979841],[67.0352249,24.7979242],[67.0352796,24.7978834]]},"stage":{"lon":67.0354311,"lat":24.797651,"len":15.0,"wid":6.0,"brg":99,"poly":[[67.0355046,24.797667],[67.0353623,24.7976886],[67.0353604,24.797635],[67.0355,24.7976134]]},"audience":{"lon":67.0355534,"lat":24.797844,"len":54.2,"wid":31.7,"brg":102,"poly":[[67.0357924,24.797693],[67.0357893,24.7977201],[67.03576,24.797797],[67.03576,24.797861],[67.0357145,24.7978671],[67.0356583,24.7978843],[67.0356329,24.797909],[67.0356111,24.7979498],[67.0355792,24.7979857],[67.0355564,24.7979793],[67.0355306,24.797935],[67.0355075,24.7979025],[67.0354449,24.7978674],[67.0353667,24.797849],[67.0352873,24.7978653],[67.0352594,24.7977585],[67.035339,24.7977408],[67.0355622,24.7976957],[67.0356919,24.7976828]]},"vip_deck":{"lon":67.0362439,"lat":24.7982634,"len":9.7,"wid":5.5,"brg":139,"poly":[[67.0362547,24.7982153],[67.0362959,24.7982467],[67.0362345,24.7983106],[67.0361919,24.7982801]]},"byd_deck":{"lon":67.0363172,"lat":24.7981883,"len":10.2,"wid":5.6,"brg":139,"poly":[[67.0363276,24.7981395],[67.0363714,24.7981703],[67.0363051,24.7982382],[67.036263,24.7982063]]},"bleach1":{"lon":67.0365539,"lat":24.7979476,"len":49.4,"wid":5.6,"brg":137,"poly":[[67.0367109,24.7977771],[67.0367407,24.7978013],[67.036409,24.798123],[67.0363723,24.7980982],[67.0365322,24.7979321]]},"bleach2":{"lon":67.0371496,"lat":24.7973861,"len":76.3,"wid":4.2,"brg":138,"poly":[[67.0373875,24.7971193],[67.0374165,24.7971413],[67.0369134,24.7976544],[67.0368814,24.7976297],[67.0371376,24.7973789]]},"media":{"lon":67.03637,"lat":24.7981322,"len":5.7,"wid":5.1,"brg":140,"poly":[[67.0363664,24.7981002],[67.0364076,24.7981271],[67.0363725,24.7981651],[67.0363324,24.7981373]]},"food":{"lon":67.0354464,"lat":24.7984768,"len":29.9,"wid":21.9,"brg":135,"poly":[[67.0354772,24.7983139],[67.0356215,24.7984465],[67.0355308,24.7985396],[67.0354973,24.7985641],[67.0354581,24.7985795],[67.0354266,24.7985846],[67.0353901,24.798582],[67.0353599,24.7985734],[67.0353237,24.7985557],[67.0353125,24.7985384],[67.0353148,24.7984906],[67.0353257,24.7984586],[67.0353527,24.7984226],[67.0353946,24.7983959],[67.0354395,24.7983826],[67.0354619,24.7983542]]},"sponsors":{"lon":67.0352993,"lat":24.7982588,"len":52.3,"wid":28.9,"brg":26,"poly":[[67.035288,24.798189],[67.0353333,24.7982019],[67.0353871,24.7982019],[67.035419,24.7981906],[67.0354436,24.7982316],[67.0354575,24.7982709],[67.0354567,24.7983109],[67.0354286,24.7983451],[67.0354011,24.798371],[67.0353499,24.7983928],[67.0353284,24.7984284],[67.0352962,24.7984713],[67.0352869,24.7985127],[67.0352879,24.7985268],[67.0352655,24.7984932],[67.035257,24.7984457],[67.0352676,24.7983959],[67.0352742,24.7983628],[67.0352608,24.798327],[67.0352262,24.7982886],[67.0350615,24.798102],[67.0350805,24.7980953],[67.0350999,24.7980893],[67.0351218,24.7980987],[67.0351434,24.7981073],[67.0351778,24.7981132],[67.0352036,24.7981014],[67.035212,24.798121],[67.0352351,24.7981517]]},"lounge":{"lon":67.035709,"lat":24.7979726,"len":22.0,"wid":19.3,"brg":88,"poly":[[67.0357758,24.7978886],[67.0358175,24.7979858],[67.0357599,24.7980611],[67.0356494,24.7980579],[67.0355999,24.7979761],[67.0356413,24.7979081],[67.0356785,24.7978845]]},"byd_lounge":{"lon":67.0360046,"lat":24.7978017,"len":27.1,"wid":20.6,"brg":35,"poly":[[67.0359984,24.7979552],[67.0358441,24.7977548],[67.0360882,24.7977481],[67.0361628,24.7978475]]},"zerrita":{"lon":67.0355623,"lat":24.7983078,"len":5.0,"wid":4.4,"brg":50,"poly":[[67.0355331,24.7983094],[67.0355576,24.7982781],[67.0355947,24.7983064],[67.035567,24.7983375]]},"shehzar":{"lon":67.036859,"lat":24.7976614,"len":5.9,"wid":3.6,"brg":138,"poly":[[67.036871,24.7976357],[67.0368902,24.7976542],[67.0368534,24.7976916],[67.0368262,24.7976701]]},"arch":{"line":[[67.0362546,24.798385],[67.0364238,24.7985006]]},"route":[[67.036305,24.798388],[67.037916,24.796726],[67.039199,24.795382],[67.040511,24.794011],[67.041562,24.792853],[67.044394,24.78979],[67.046132,24.787867],[67.047107,24.786794],[67.048708,24.785041],[67.05013,24.783473],[67.051461,24.782005],[67.05242,24.780922],[67.054198,24.778948],[67.055376,24.777679],[67.056734,24.776185],[67.056858,24.776062],[67.059058,24.773688],[67.060579,24.772059],[67.061568,24.770981],[67.064172,24.768201],[67.065694,24.766736],[67.066965,24.765557],[67.068269,24.764329],[67.06979,24.762915],[67.071008,24.761766],[67.071392,24.761382],[67.07159,24.761124],[67.071948,24.760009],[67.07223,24.759023],[67.072468,24.758274],[67.072642,24.75764],[67.073094,24.756109],[67.073479,24.755268],[67.073961,24.754698],[67.074788,24.753716],[67.075594,24.752911],[67.076036,24.752687],[67.081241,24.751698],[67.084081,24.751156],[67.086206,24.750756],[67.086517,24.750703],[67.086954,24.750804],[67.087447,24.751011],[67.088031,24.751382],[67.088496,24.751775],[67.088915,24.752221],[67.089439,24.752874],[67.090104,24.753658],[67.09075,24.75424],[67.091822,24.754813],[67.092835,24.755363],[67.09379,24.755808],[67.094087,24.756001],[67.094341,24.756311],[67.094916,24.756871],[67.095978,24.757993],[67.097127,24.759211],[67.09878,24.760881],[67.099977,24.762159],[67.100965,24.763218],[67.10197,24.764264],[67.103166,24.765483],[67.1032,24.765644],[67.10312,24.76574],[67.102998,24.765838],[67.101451,24.767098],[67.099696,24.768495],[67.09907,24.768988]],"entries":[[67.0360207,24.7984197],[67.0367627,24.7977055]],"pixel":[[67.0361054,24.798269],[67.0356924,24.7980851]],"uturn":[67.0989603,24.7694853]};
+
+const C = Cesium;
+const OFF = new URLSearchParams(location.search).has('offline');
+const D2R = Math.PI / 180;
+const AC = '#7fe3c9';
+const col = (h, a = 1) => C.Color.fromCssColorString(h).withAlpha(a);
+
+/* ---------- zone catalogue ---------- */
+const ZONES = [
+ {k:'arch', g:'Race', n:'Start / Finish Arch', c:'#7fe3c9', d:'Branded start and finish gantry spanning the carriageway. Every runner starts and finishes here, so it is the most photographed and filmed point of the day.', r:70, h:200, p:-18},
+ {k:'byd_deck', g:'Race', n:'BYD Viewing Deck', c:'#7fe3c9', d:'Raised hospitality deck right at the finish line with a direct sightline to the arch and the final straight.', r:45, h:225, p:-20},
+ {k:'vip_deck', g:'Race', n:'VIP Viewing Deck', c:'#f2c14e', d:'Covered VIP deck beside the finish line for guests, officials and partners.', r:45, h:225, p:-20},
+ {k:'media', g:'Race', n:'Media Box', c:'#e5534b', d:'Raised, enclosed media position facing the finish line for broadcast and photography.', r:35, h:225, p:-20},
+ {k:'bleach1', g:'Race', n:'Bleachers · Finish Straight', c:'#5b8def', d:'Tiered spectator seating along the finish straight.', r:90, h:230, p:-22},
+ {k:'bleach2', g:'Race', n:'Bleachers · South', c:'#5b8def', d:'Second run of tiered spectator seating further along the road.', r:110, h:230, p:-22},
+ {k:'byd_zone', g:'BYD', n:'BYD Experience Zone', c:'#7fe3c9', d:'Circular showcase platform with the BYD line-up on display under a branded overhead truss ring. The centrepiece of the race village.', r:80, h:200, p:-30},
+ {k:'byd_lounge', g:'BYD', n:'BYD Lounge', c:'#7fe3c9', d:'Branded marquee lounge for BYD guests, test-drive sign-ups and hospitality.', r:70, h:215, p:-25},
+ {k:'pixel', g:'BYD', n:'Pixel Charging Stations', c:'#a78bfa', d:'Two phone charging kiosks placed in the main circulation paths.', r:60, h:220, p:-30},
+ {k:'stage', g:'Village', n:'Main Stage', c:'#f97316', d:'Stage for panel discussions, performances and prize ceremonies, with an LED backdrop and side speaker stacks.', r:70, h:200, p:-18},
+ {k:'audience', g:'Village', n:'General Audience Area', c:'#fb923c', d:'Open seating in arcs facing the main stage.', r:85, h:200, p:-30},
+ {k:'lounge', g:'Village', n:'Lounge', c:'#facc15', d:'Covered lounge marquee next to the audience area.', r:60, h:200, p:-25},
+ {k:'sponsors', g:'Village', n:"Sponsors' Area", c:'#22c55e', d:'Continuous row of white sponsor activation stalls with branded fascias along the park path.', r:90, h:200, p:-30},
+ {k:'food', g:'Village', n:'Food Area', c:'#eab308', d:'Food stalls facing a central seating area with shaded tables.', r:70, h:200, p:-30},
+ {k:'zerrita', g:'Village', n:'Zerrita', c:'#ec4899', d:'Partner activation kiosk.', r:30, h:200, p:-25},
+ {k:'shehzar', g:'Village', n:'Shehzar · Painting Space', c:'#ec4899', d:'Live painting and art activity space.', r:30, h:230, p:-25},
+ {k:'entries', g:'Village', n:'Entry / Exit Gates', c:'#cbd5e1', d:'Public entry and exit points into the race village.', r:90, h:220, p:-30},
+ {k:'route', g:'Race', n:'Race Route · to U-Turn 10.5 km', c:'#7fe3c9', d:'Out-and-back course from the start arch along the coast to the U-turn at 10.5 km and back to the finish.', r:0, h:225, p:-40}
+];
+const ZK = Object.fromEntries(ZONES.map(z => [z.k, z]));
+
+/* ---------- viewer ---------- */
+const viewer = new C.Viewer('c', {
+ globe: OFF ? undefined : false, baseLayer: false, baseLayerPicker: false, geocoder: false, homeButton: false,
+ sceneModePicker: false, navigationHelpButton: false, animation: false, timeline: false, fullscreenButton: false,
+ infoBox: false, selectionIndicator: false
+});
+const scene = viewer.scene;
+viewer.clock.currentTime = C.JulianDate.fromIso8601('2027-01-10T06:00:00Z');
+viewer.clock.shouldAnimate = false;
+scene.highDynamicRange = false;
+if (OFF) { scene.globe.baseColor = col('#2b3a33'); }
+
+const S = new C.CustomDataSource('structures');
+const F = new C.CustomDataSource('footprints');
+const LBL = new C.CustomDataSource('labels');
+const RT = new C.CustomDataSource('route');
+[S, F, LBL, RT].forEach(d => viewer.dataSources.add(d));
+
+/* ---------- local frame helpers ---------- */
+class Frame {
+ constructor(lon, lat, h, brg) {
+  this.lon = lon; this.lat = lat; this.h = h; this.b = brg;
+  this.m = C.Transforms.eastNorthUpToFixedFrame(C.Cartesian3.fromDegrees(lon, lat, h));
+  this.s = Math.sin(brg * D2R); this.c = Math.cos(brg * D2R);
+ }
+ p(x, y, z) { // x along bearing, y to the left, z up
+  const E = x * this.s - y * this.c, N = x * this.c + y * this.s;
+  return C.Matrix4.multiplyByPoint(this.m, new C.Cartesian3(E, N, z), new C.Cartesian3());
+ }
+ ll(x, y) { const c = C.Cartographic.fromCartesian(this.p(x, y, 0)); return [c.longitude / D2R, c.latitude / D2R]; }
+ q(extra = 0, pitchAxis) {
+  const b = (this.b + extra) * D2R, s = Math.sin(b), c = Math.cos(b);
+  let R = new C.Matrix3(s, -c, 0, c, s, 0, 0, 0, 1);
+  if (pitchAxis) R = C.Matrix3.multiply(R, pitchAxis, new C.Matrix3());
+  const rot = C.Matrix4.getMatrix3(this.m, new C.Matrix3());
+  return C.Quaternion.fromRotationMatrix(C.Matrix3.multiply(rot, R, new C.Matrix3()));
+ }
+}
+let ZONE = null; // current zone key while building
+function add(o) { const e = S.entities.add(o); e.zone = ZONE; return e; }
+function box(Fr, x, y, z, dx, dy, dz, color, rot = 0) {
+ return add({position: Fr.p(x, y, z + dz / 2), orientation: Fr.q(rot), box: {dimensions: new C.Cartesian3(dx, dy, dz), material: color}});
+}
+function cyl(Fr, x, y, z, len, rt, rb, color, slices = 32, rot = 0) {
+ return add({position: Fr.p(x, y, z + len / 2), orientation: Fr.q(rot), cylinder: {length: len, topRadius: rt, bottomRadius: rb, material: color, slices}});
+}
+// vertical banner; face = 1 means readable from the +y side, -1 from -y side
+function banner(Fr, x, y, zc, w, h, canvas, face = 1) {
+ return add({position: Fr.p(x, y, zc), orientation: Fr.q(face > 0 ? 0 : 180),
+  plane: {plane: new C.Plane(C.Cartesian3.UNIT_Y, 0), dimensions: new C.Cartesian2(w, h),
+   material: new C.ImageMaterialProperty({image: canvas})}});
+}
+
+/* ---------- textures ---------- */
+const TX = {};
+function tex(key, lines, o = {}) {
+ if (TX[key]) return TX[key];
+ const w = o.w || 1024, h = o.h || 256, cv = document.createElement('canvas');
+ cv.width = w; cv.height = h; const g = cv.getContext('2d');
+ g.fillStyle = o.bg || '#0b0d0e'; g.fillRect(0, 0, w, h);
+ if (o.stripe) { g.fillStyle = o.stripe; g.fillRect(0, h - h * 0.08, w, h * 0.08); g.fillRect(0, 0, w, h * 0.04); }
+ g.textAlign = 'center'; g.textBaseline = 'middle';
+ const n = lines.length;
+ lines.forEach((l, i) => {
+  g.fillStyle = l.c || '#fff';
+  g.font = `${l.wt || 800} ${l.s * h}px Archivo, Arial, sans-serif`;
+  g.fillText(l.t, w / 2, h * ((i + 1) / (n + 1)) + (l.dy || 0) * h, w * 0.92);
+ });
+ return (TX[key] = cv);
+}
+
+/* ---------- geometry utils ---------- */
+function pip(pt, poly) { let ins = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [xi, yi] = poly[i], [xj, yj] = poly[j]; if ((yi > pt[1]) !== (yj > pt[1]) && pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi) ins = !ins; } return ins; }
+function bearing(a, b) { const dE = (b[0] - a[0]) * 111320 * Math.cos(a[1] * D2R), dN = (b[1] - a[1]) * 110574; return [Math.atan2(dE, dN) / D2R, Math.hypot(dE, dN)]; }
+const median = a => { const s = a.filter(v => Number.isFinite(v)).sort((x, y) => x - y); return s.length ? s[Math.floor(s.length / 2)] : NaN; };
+
+/* ---------- ground heights ---------- */
+const G = {};
+async function sampleGround() {
+ const pts = [], idx = [];
+ const push = (k, lon, lat) => { pts.push(C.Cartographic.fromDegrees(lon, lat)); idx.push(k); };
+ for (const k in CFG) {
+  const z = CFG[k];
+  if (z.poly) { push(k, z.lon, z.lat); const fr = new Frame(z.lon, z.lat, 0, z.brg); [[.3, .3], [-.3, .3], [.3, -.3], [-.3, -.3]].forEach(([a, b]) => { const [lo, la] = fr.ll(a * z.len, b * z.wid); push(k, lo, la); }); }
+ }
+ const [a, b] = CFG.arch.line; push('arch', (a[0] + b[0]) / 2, (a[1] + b[1]) / 2); push('arch', a[0], a[1]); push('arch', b[0], b[1]);
+ CFG.entries.forEach((p, i) => push('entry' + i, p[0], p[1]));
+ CFG.pixel.forEach((p, i) => push('pixel' + i, p[0], p[1]));
+ push('uturn', CFG.uturn[0], CFG.uturn[1]);
+ let res = null;
+ if (!OFF) {
+  try {
+   res = await Promise.race([scene.sampleHeightMostDetailed(pts), new Promise(r => setTimeout(() => r(null), 25000))]);
+  } catch (e) { console.warn('sample failed', e); }
+ }
+ const by = {};
+ if (res) res.forEach((c, i) => { (by[idx[i]] = by[idx[i]] || []).push(c && c.height); });
+ const all = res ? median(res.map(c => c && c.height)) : NaN;
+ const base = OFF ? 0 : (Number.isFinite(all) ? all : -38);
+ for (const k of new Set(idx)) {
+  let h = by[k] ? median(by[k]) : NaN;
+  if (!Number.isFinite(h) || Math.abs(h - base) > 2.5) h = base;
+  G[k] = h;
+ }
+ G._base = base;
+ console.log('ground', G);
+}
+
+/* ---------- builders ---------- */
+const BLACK = col('#111416'), WHITE = col('#f4f4f1'), STEEL = col('#3b4045'), TEAL = col(AC), GLASS = col('#bfe9f5', .35), WALL = col('#f6f6f3'), TRUSS = col('#1a1c1e'), SILVER = col('#b9bec4');
+
+function zf(k, extra = 0) { const z = CFG[k]; return new Frame(z.lon, z.lat, G[k], z.brg + extra); }
+function line(Fr, pts, color, width = 1.2) { return add({polyline: {positions: pts.map(p => Fr.p(p[0], p[1], p[2])), width, material: color, arcType: C.ArcType.NONE}}); }
+const C2 = (a) => a.map(([x, y]) => new C.Cartesian2(x, y));
+function circ(r, n = 16) { const a = []; for (let i = 0; i < n; i++) { const t = i / n * 2 * Math.PI; a.push([r * Math.cos(t), r * Math.sin(t)]); } return C2(a); }
+
+// square box truss starting at (x,y,z) running along a frame axis for length L
+function truss(Fr, x, y, z, axis, L, s = .32, color = TRUSS) {
+ const h = s / 2, t = .055;
+ const P = (a, u, v) => axis === 'x' ? [x + a, y + u, z + v] : axis === 'y' ? [x + u, y + a, z + v] : [x + u, y + v, z + a];
+ [[-h, -h], [-h, h], [h, -h], [h, h]].forEach(([u, v]) => {
+  if (axis === 'x') box(Fr, x + L / 2, y + u, z + v - t / 2, L, t, t, color);
+  else if (axis === 'y') box(Fr, x + u, y + L / 2, z + v - t / 2, t, L, t, color);
+  else box(Fr, x + u, y + v, z, t, t, L, color);
+ });
+ const n = Math.max(1, Math.round(L / s));
+ [[[-h, -h], [-h, h]], [[-h, h], [h, h]], [[h, h], [h, -h]], [[h, -h], [-h, -h]]].forEach(([c1, c2]) => {
+  const pts = []; for (let i = 0; i <= n; i++) { const c = i % 2 ? c2 : c1; pts.push(P(i * L / n, c[0], c[1])); }
+  line(Fr, pts, color, 1.1);
+ });
+}
+// note: Cesium centres a polylineVolume shape on its path, so the path is raised by half the shape height
+function gable(Fr, len, wid, eave, rise, color, cx = 0, cy = 0, alongY = false) {
+ const z = eave + rise / 2;
+ const a = alongY ? [Fr.p(cx, cy - len / 2, z), Fr.p(cx, cy + len / 2, z)] : [Fr.p(cx - len / 2, cy, z), Fr.p(cx + len / 2, cy, z)];
+ return add({polylineVolume: {positions: a, shape: C2([[-wid / 2, 0], [wid / 2, 0], [0, rise]]), cornerType: C.CornerType.MITERED, material: color}});
+}
+function imgMat(cv) { return new C.ImageMaterialProperty({image: cv}); }
+
+/* textures in the style of the renders */
+function pillarTex() {
+ if (TX.pil) return TX.pil;
+ const w = 160, h = 960, n = 6, cv = document.createElement('canvas'); cv.width = w; cv.height = h; const g = cv.getContext('2d');
+ g.fillStyle = '#2a2d30'; g.fillRect(0, 0, w, h); g.textAlign = 'center'; g.textBaseline = 'middle';
+ for (let i = 0; i < n; i++) {
+  g.fillStyle = i % 2 ? '#f4f4f1' : '#0b0d0e'; g.fillRect(4, i * h / n + 3, w - 8, h / n - 6);
+  g.fillStyle = i % 2 ? '#0b0d0e' : AC; g.font = '800 52px Archivo, Arial, sans-serif'; g.fillText('BYD', w / 2, (i + .5) * h / n);
+ }
+ return (TX.pil = cv);
+}
+function headerTex() {
+ if (TX.hdr) return TX.hdr;
+ const w = 2048, h = 200, cv = document.createElement('canvas'); cv.width = w; cv.height = h; const g = cv.getContext('2d');
+ g.fillStyle = '#0b0d0e'; g.fillRect(0, 0, w, h); g.textBaseline = 'middle';
+ [1 / 6, 3 / 6, 5 / 6].forEach(f => {
+  const cx = w * f; g.fillStyle = AC;
+  g.textAlign = 'right'; g.font = '800 96px Archivo, Arial, sans-serif'; g.fillText('BYD', cx - 18, h / 2 + 4);
+  g.fillRect(cx - 6, h * .25, 4, h * .5);
+  g.textAlign = 'left'; g.font = '700 40px Archivo, Arial, sans-serif'; g.fillText('KARACHI', cx + 14, h / 2 - 22); g.fillText('MARATHON', cx + 14, h / 2 + 24);
+ });
+ return (TX.hdr = cv);
+}
+function stripeTex(a = AC, b = '#f4f4f1') {
+ const key = 'st' + a + b; if (TX[key]) return TX[key];
+ const cv = document.createElement('canvas'); cv.width = 512; cv.height = 64; const g = cv.getContext('2d');
+ for (let i = 0; i < 16; i++) { g.fillStyle = i % 2 ? b : a; g.fillRect(i * 32, 0, 32, 64); }
+ return (TX[key] = cv);
+}
+
+function buildArch() {
+ ZONE = 'arch';
+ const [a, b] = CFG.arch.line, [brg, span] = bearing(a, b);
+ const fr = new Frame((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, G.arch, brg);
+ const half = span / 2 + 0.8, H = 8;
+ [-half, half].forEach(x => {
+  box(fr, x, 0, 0, 1.5, 1.5, H, BLACK);
+  banner(fr, x, 0.77, (H - 2.4) / 2 + .1, 1.3, H - 2.8, pillarTex(), 1);
+  banner(fr, x, -0.77, (H - 2.4) / 2 + .1, 1.3, H - 2.8, pillarTex(), -1);
+  truss(fr, x + Math.sign(x) * 1.25, 0, 0, 'z', H + .6, .4);
+ });
+ box(fr, 0, 0, H - 2.4, span + 3.1, 1.5, 2.4, BLACK);
+ const t = headerTex();
+ banner(fr, 0, 0.77, H - 1.2, span + 2.6, 2.1, t, 1);
+ banner(fr, 0, -0.77, H - 1.2, span + 2.6, 2.1, t, -1);
+ truss(fr, -half - 1.25, 0, H + .6, 'x', 2 * half + 2.5, .4);
+ add({polygon: {hierarchy: [fr.p(-span / 2, -1, 0), fr.p(span / 2, -1, 0), fr.p(span / 2, 1, 0), fr.p(-span / 2, 1, 0)], material: col('#e11d48', .85), classificationType: C.ClassificationType.BOTH}});
+ return {f: fr, top: H + 1};
+}
+
+function sofa(fr, x, y, c = '#8d949b') { box(fr, x, y, 0, 2.1, .85, .42, col(c)); box(fr, x, y - .35, .42, 2.1, .18, .45, col(c)); }
+
+function buildDeck(k, label, accent, enclosed) {
+ ZONE = k; const z = CFG[k], fr = zf(k), L = z.len, W = z.wid;
+ const ph = enclosed ? 2.2 : 1.5, ch = 3.0;
+ box(fr, 0, 0, 0, L, W, ph, BLACK);
+ banner(fr, 0, W / 2 + .02, ph / 2, L * .96, ph * .8, tex('sk' + k, [{t: label, s: .55, c: accent}], {w: 1024, h: 128}), 1);
+ if (enclosed) {
+  box(fr, 0, -0.3, ph, L - .4, W - 1, 2.6, WHITE);
+  banner(fr, 0, W / 2 - .78, ph + 1.4, L - 1.2, 1.3, tex('win', [{t: '', s: .1}], {bg: '#20343d', w: 64, h: 32}), 1);
+  box(fr, 0, -0.3, ph + 2.6, L, W, .25, BLACK);
+  banner(fr, 0, W / 2 + .2, ph + 2.72, L * .9, .25, tex('fas' + k, [{t: label, s: .6, c: '#fff'}], {w: 1024, h: 96}), 1);
+  return {f: fr, top: ph + 3};
+ }
+ const xs = [-L / 2 + .2, L / 2 - .2], ys = [-W / 2 + .2, W / 2 - .2];
+ xs.forEach(x => ys.forEach(y => truss(fr, x, y, ph, 'z', ch, .3)));
+ ys.forEach(y => truss(fr, -L / 2 + .2, y, ph + ch, 'x', L - .4, .3));
+ xs.forEach(x => truss(fr, x, -W / 2 + .2, ph + ch, 'y', W - .4, .3));
+ add({position: fr.p(0, 0, ph + ch + .22), orientation: fr.q(0), box: {dimensions: new C.Cartesian3(L, W, .1), material: imgMat(stripeTex(accent))}});
+ box(fr, 0, W / 2 - .1, ph, L, .06, 1.0, GLASS);
+ [-L / 3, 0, L / 3].forEach(x => sofa(fr, x, -W / 2 + 1.1));
+ [-L / 4, L / 4].forEach(x => cyl(fr, x, .4, ph, .45, .45, .45, col('#e7e2d8'), 16));
+ box(fr, L / 2 + .8, 0, 0, 1.6, 2.2, ph * .5, BLACK);
+ return {f: fr, top: ph + ch + .4};
+}
+
+function buildBleachers(k) {
+ ZONE = k; const z = CFG[k], fr = zf(k), L = z.len, W = z.wid;
+ const rows = Math.max(3, Math.min(7, Math.floor(W / .75))), d = W / rows, top = .45 * rows;
+ for (let i = 0; i < rows; i++) {
+  const y = W / 2 - d * (i + .5), hz = .45 * (i + 1);
+  box(fr, 0, y, 0, L, d, hz, i % 2 ? col('#8f9aa6') : col('#a7b1bc'));
+  box(fr, 0, y + d * .25, hz, L, d * .35, .06, col('#2f5fb3'));
+ }
+ box(fr, 0, -W / 2 + .05, 0, L, .1, top + 1, STEEL);
+ const roofZ = top + 2.6, n = Math.max(2, Math.round(L / 10));
+ for (let i = 0; i <= n; i++) { const x = -L / 2 + .2 + i * (L - .4) / n; truss(fr, x, -W / 2 + .2, 0, 'z', roofZ, .3); }
+ truss(fr, -L / 2, -W / 2 + .2, roofZ, 'x', L, .3);
+ add({position: fr.p(0, 0, roofZ + .3), orientation: fr.q(0), box: {dimensions: new C.Cartesian3(L, W + .8, .1), material: imgMat(stripeTex())}});
+ return {f: fr, top: roofZ + .5};
+}
+
+function buildStage() {
+ ZONE = 'stage'; const z = CFG.stage, fr = zf('stage'), L = z.len, W = z.wid, H = 8.5, dh = 1.3;
+ box(fr, 0, 0, 0, L, W, dh, col('#1d2124'));
+ banner(fr, 0, W / 2 + .02, dh / 2, L * .96, dh * .7, tex('stsk', [{t: 'KARACHI MARATHON', s: .45, c: AC}], {w: 1024, h: 96}), 1);
+ const xs = [-L / 2 - .2, L / 2 + .2], ys = [-W / 2 - .2, W / 2 + .2];
+ xs.forEach(x => ys.forEach(y => truss(fr, x, y, 0, 'z', H, .4)));
+ ys.forEach(y => truss(fr, -L / 2 - .2, y, H, 'x', L + .4, .4));
+ xs.forEach(x => truss(fr, x, -W / 2 - .2, H, 'y', W + .4, .4));
+ box(fr, 0, -W / 2 + .2, dh, L * .86, .4, 5.4, BLACK);
+ banner(fr, 0, -W / 2 + .42, dh + 2.8, L * .82, 4.8, tex('led', [{t: 'KARACHI MARATHON', s: .2, c: '#fff'}, {t: 'LIVE', s: .12, c: AC, wt: 600}], {w: 1024, h: 384, bg: '#102a33'}), 1);
+ [-1, 1].forEach(sx => { box(fr, sx * (L / 2 + 1.4), W / 4, 0, 1.2, 1.2, 3, BLACK); box(fr, sx * (L / 2 - 1), -W / 2 + .4, H - 3.2, .9, .9, 2.6, BLACK); });
+ return {f: fr, top: H + .4};
+}
+
+function buildAudience() {
+ ZONE = 'audience'; const st = zf('stage'), poly = CFG.audience.poly, g = G.audience;
+ const W = CFG.stage.wid;
+ for (let r = 7; r <= 42; r += 1.6) {
+  const arc = 2.6, n = Math.floor((Math.PI * r) / arc);
+  for (let i = 0; i <= n; i++) {
+   const th = Math.PI * (i / n);
+   const x = r * Math.cos(th), y = W / 2 + r * Math.sin(th);
+   const ll = st.ll(x, y);
+   if (!pip(ll, poly)) continue;
+   const tb = bearing(st.ll(x - Math.sin(th), y + Math.cos(th)), st.ll(x + Math.sin(th), y - Math.cos(th)))[0];
+   box(new Frame(ll[0], ll[1], g, tb), 0, 0, 0, 2.2, .55, .85, col('#e9edf1'));
+  }
+ }
+}
+
+const SEDAN = {w: 1.88, body: [[2.4, .32], [2.45, .5], [2.3, .68], [1.6, .82], [-2.1, .86], [-2.45, .72], [-2.42, .32]], cab: [[1.25, .84], [.35, 1.42], [-1.25, 1.36], [-1.95, .84]]};
+const SUV = {w: 1.88, body: [[2.2, .36], [2.25, .6], [2.15, .85], [1.5, 1.0], [-2.05, 1.02], [-2.25, .95], [-2.2, .36]], cab: [[1.45, 1.0], [.55, 1.6], [-1.85, 1.58], [-2.05, 1.0]]};
+const ctr = a => { const xs = a.map(p => p[0]), ys = a.map(p => p[1]); return [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2]; };
+const CSIGN = 1;
+function car(lon, lat, h, brg, spec, color) {
+ const cf = new Frame(lon, lat, h, brg), w = spec.w;
+ [-1.42, 1.38].forEach(x => add({polylineVolume: {positions: [cf.p(x * CSIGN, -w / 2 + .03, .34), cf.p(x * CSIGN, w / 2 - .03, .34)], shape: circ(.34), material: col('#131313')}}));
+ const [bx, by] = ctr(spec.body), [kx, ky] = ctr(spec.cab);
+ add({polylineVolume: {positions: [cf.p(bx * CSIGN, -w / 2, by), cf.p(bx * CSIGN, w / 2, by)], shape: C2(spec.body), material: col(color)}});
+ add({polylineVolume: {positions: [cf.p(kx * CSIGN, -w / 2 + .12, ky), cf.p(kx * CSIGN, w / 2 - .12, ky)], shape: C2(spec.cab), material: col('#17222a')}});
+}
+
+function buildBydZone() {
+ ZONE = 'byd_zone'; const z = CFG.byd_zone, fr = zf('byd_zone'), R = 17.3, g = G.byd_zone;
+ cyl(fr, 0, 0, 0, .35, R + .3, R + .3, BLACK, 64);
+ cyl(fr, 0, 0, .35, .1, R, R, col('#e8e2d6'), 64);
+ const ring = (r, h) => { const a = []; for (let i = 0; i <= 72; i++) { const t = i / 72 * 2 * Math.PI; a.push(fr.p(r * Math.cos(t), r * Math.sin(t), h)); } return a; };
+ const wallPts = ring(R + .2, 1.3);
+ add({wall: {positions: wallPts, minimumHeights: wallPts.map(() => g + .35), maximumHeights: wallPts.map(() => g + 1.4), material: col('#0e1113')}});
+ const wallTop = ring(R + .22, 1.42);
+ add({wall: {positions: wallTop, minimumHeights: wallTop.map(() => g + 1.3), maximumHeights: wallTop.map(() => g + 1.45), material: TEAL}});
+ add({polyline: {positions: ring(R, 7.8), width: 6, material: TEAL, arcType: C.ArcType.NONE}});
+ add({polyline: {positions: ring(R, 7.3), width: 3, material: TRUSS, arcType: C.ArcType.NONE}});
+ add({polyline: {positions: ring(R - .4, 7.55), width: 3, material: TRUSS, arcType: C.ArcType.NONE}});
+ truss(fr, -R, 0, 7.4, 'x', 2 * R, .4);
+ truss(fr, 0, -R, 7.4, 'y', 2 * R, .4);
+ [45, 135, 225, 315].forEach(a => truss(fr, R * Math.cos(a * D2R), R * Math.sin(a * D2R), 0, 'z', 7.6, .4));
+ const cars = [[0, 10, 0, SEDAN, '#eceff1'], [-8.5, 4.5, 60, SUV, '#2b2f36'], [8.5, 4.5, -60, SEDAN, '#5d7f8e'], [-8.5, -5, 120, SUV, '#9fd9c8'], [8.5, -5, -120, SEDAN, '#b8bcc2'], [0, -10.5, 180, SUV, '#7a1f2b']];
+ cars.forEach(([x, y, rot, spec, c], i) => {
+  const ll = fr.ll(x, y);
+  if (window.CAR_GLB) {
+   const m = i % 2 ? CAR_GLB.atto : CAR_GLB.seal, cf = new Frame(ll[0], ll[1], g + .47, z.brg + rot);
+   add({position: cf.p(0, 0, 0), orientation: cf.q(0), model: {uri: m.uri, scale: m.scale, shadows: C.ShadowMode.DISABLED}});
+  } else car(ll[0], ll[1], g + .45, z.brg + rot, spec, c);
+  cyl(fr, x, y, .45, .02, 3.4, 3.4, col('#d9d3c6'), 48);
+ });
+ const t = tex('bydTotem', [{t: 'BYD', s: .6, c: AC}], {w: 512, h: 256});
+ box(fr, 0, 0, .45, .5, .5, 5, BLACK);
+ box(fr, 0, 0, 3.6, 3.4, .3, 1.8, BLACK);
+ banner(fr, 0, .16, 4.5, 3.2, 1.6, t, 1); banner(fr, 0, -.16, 4.5, 3.2, 1.6, t, -1);
+ return {f: fr, top: 8.2};
+}
+
+function buildMarquee(k, label, accent, insetL = 1, insetW = 1) {
+ ZONE = k; const z = CFG[k], fr = zf(k), f90 = zf(k, 90), L = Math.min(z.len, 30) * insetL, W = Math.min(z.wid, 20) * insetW, eave = 3.2, rise = W * .14;
+ box(fr, 0, 0, 0, L, W, eave, col('#f3f3ef', .97));
+ gable(fr, L + .3, W + .5, eave, rise, col('#ffffff'));
+ const t = tex('mq' + k, [{t: label, s: .5, c: accent}], {w: 1024, h: 128});
+ banner(fr, 0, W / 2 + .03, eave - .45, Math.min(L * .7, 16), .8, t, 1);
+ banner(fr, 0, -W / 2 - .03, eave - .45, Math.min(L * .7, 16), .8, t, -1);
+ banner(f90, 0, L / 2 + .03, eave - .45, Math.min(W * .7, 12), .7, t, 1);
+ banner(f90, 0, -L / 2 - .03, eave - .45, Math.min(W * .7, 12), .7, t, -1);
+ [W / 2 + .02, -W / 2 - .02].forEach((y, i) => banner(fr, 0, y, .9, L * .96, 1.0, tex('mqw', [{t: '', s: .1}], {bg: '#2a3a40', w: 64, h: 32}), i ? -1 : 1));
+ return {f: fr, top: eave + rise};
+}
+
+// white gable-roof stall, open front with counter (front faces +y of its own frame)
+function hut(lon, lat, g, brg, w, d, label, ink = '#111') {
+ const hf = new Frame(lon, lat, g, brg), e = 2.4;
+ box(hf, 0, -d / 2, 0, w, .08, e, WALL);
+ [-1, 1].forEach(s => box(hf, s * w / 2, 0, 0, .08, d, e, WALL));
+ box(hf, 0, d / 2 - .25, 0, w, .5, 1.0, WALL);
+ gable(hf, d + .3, w + .3, e, .9, col('#ffffff'), 0, 0, true);
+ banner(hf, 0, d / 2 + .17, e - .22, w * .92, .42, tex('hut' + label, [{t: label, s: .52, c: ink}], {w: 512, h: 96, bg: '#ffffff'}), 1);
+}
+function stallRow(fr, cx, cy, n, uw, d, label) {
+ const L = n * uw, e = 2.6;
+ box(fr, cx, cy - d / 2, 0, L, .08, e, WALL);
+ for (let i = 0; i <= n; i++) box(fr, cx - L / 2 + i * uw, cy, 0, .08, d, e, WALL);
+ for (let i = 0; i < n; i++) {
+  const ux = cx - L / 2 + (i + .5) * uw;
+  box(fr, ux, cy + d / 2 - .25, 0, uw - .1, .5, 1.0, WALL);
+  banner(fr, ux, cy + d / 2 + .02, e - .3, uw * .9, .5, tex('row' + label, [{t: label, s: .55, c: '#111'}], {w: 512, h: 96, bg: '#ffffff'}), 1);
+ }
+ gable(fr, L + .3, d + .4, e, 1.1, col('#ffffff'), cx, cy);
+}
+
+function buildSponsorRow() {
+ ZONE = 'sponsors'; const z = CFG.sponsors, fr = zf('sponsors', 180), uw = 5, d = 4;
+ let best = {n: 0};
+ for (let y = -10; y <= 10; y += 1) {
+  let run = [], runs = [];
+  for (let x = -z.len / 2 + uw / 2; x <= z.len / 2 - uw / 2; x += uw) {
+   const ok = [[-.5, -.5], [.5, .5], [-.5, .5], [.5, -.5]].every(([a, b]) => pip(fr.ll(x + a * uw, y + b * d), z.poly));
+   if (ok) run.push(x); else { if (run.length) runs.push(run); run = []; }
+  }
+  if (run.length) runs.push(run);
+  const tot = runs.reduce((s, r) => s + r.length, 0);
+  if (tot > best.n) best = {n: tot, y, runs};
+ }
+ (best.runs || []).forEach(r => stallRow(fr, (r[0] + r[r.length - 1]) / 2, best.y, r.length, uw, d, 'SPONSOR'));
+ return {f: fr, top: 4};
+}
+
+function buildFood() {
+ ZONE = 'food'; const z = CFG.food, fr = zf('food'), g = G.food, P = z.poly, kx = 111320 * Math.cos(z.lat * D2R), ky = 110574;
+ const loc = ([lo, la]) => [(lo - z.lon) * kx, (la - z.lat) * ky], geo = ([e, n]) => [z.lon + e / kx, z.lat + n / ky];
+ const Q = P.map(loc), placed = [];
+ // stalls follow the boundary, inset and facing the centre
+ for (let i = 0; i < Q.length; i++) {
+  const a = Q[i], b = Q[(i + 1) % Q.length], len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  for (let t = 1.8; t < len; t += 3.5) {
+   const p = [a[0] + (b[0] - a[0]) * t / len, a[1] + (b[1] - a[1]) * t / len], m = Math.hypot(p[0], p[1]) || 1;
+   const c = [p[0] - p[0] / m * 2.1, p[1] - p[1] / m * 2.1];
+   if (placed.some(q => Math.hypot(q[0] - c[0], q[1] - c[1]) < 3.5)) continue;
+   const face = Math.atan2(-c[0], -c[1]) / D2R, hb = face + 90;
+   const cf = new Frame(...geo(c), 0, hb);
+   if (![[1.5, 1.5], [-1.5, -1.5], [1.5, -1.5], [-1.5, 1.5]].every(([u, v]) => pip(cf.ll(u, v), P))) continue;
+   placed.push(c); const ll = geo(c); hut(ll[0], ll[1], g, hb, 3, 3, 'FOOD STALL');
+  }
+ }
+ const near = (x, y) => { const ll = fr.ll(x, y), q = loc(ll); return placed.some(c => Math.hypot(c[0] - q[0], c[1] - q[1]) < 3.6); };
+ const L = z.len, W = z.wid;
+ for (let x = -L / 2 + 2; x <= L / 2 - 2; x += 3.8) for (let y = -W / 2 + 2; y <= W / 2 - 2; y += 3.8)
+  if (pip(fr.ll(x, y), P) && !near(x, y)) { cyl(fr, x, y, 0, .75, .55, .55, WHITE, 16); cyl(fr, x, y, 2.2, .05, 1.3, 1.3, col('#f8fafc'), 16); cyl(fr, x, y, .75, 1.5, .03, .03, STEEL, 6); }
+ return {f: fr, top: 4};
+}
+
+function buildSmall() {
+ ZONE = 'zerrita'; { const z = CFG.zerrita; hut(z.lon, z.lat, G.zerrita, z.brg, 4, 3.6, 'ZERRITA', '#be185d'); }
+ ZONE = 'shehzar'; { const z = CFG.shehzar; hut(z.lon, z.lat, G.shehzar, z.brg, 4.4, 3, 'SHEHZAR · ART', '#7e22ce'); }
+ ZONE = 'pixel';
+ CFG.pixel.forEach((p, i) => {
+  const fr = new Frame(p[0], p[1], G['pixel' + i], 0);
+  box(fr, 0, 0, 0, 1.2, .6, 2.2, col('#1b1d21'));
+  const t = tex('pix', [{t: 'CHARGE', s: .32, c: '#c4b5fd'}], {w: 256, h: 128, bg: '#1b1d21'});
+  banner(fr, 0, .31, 1.6, 1.1, .55, t, 1); banner(fr, 0, -.31, 1.6, 1.1, .55, t, -1);
+ });
+ ZONE = 'entries';
+ CFG.entries.forEach((p, i) => {
+  const fr = new Frame(p[0], p[1], G['entry' + i], 138);
+  [-3.3, 3.3].forEach(x => truss(fr, x, 0, 0, 'z', 4.4, .35));
+  box(fr, 0, 0, 3.4, 7, .5, .9, BLACK);
+  const t = tex('gate', [{t: 'ENTRY  ·  EXIT', s: .5, c: AC}], {w: 1024, h: 128});
+  banner(fr, 0, .27, 3.85, 6.4, .75, t, 1); banner(fr, 0, -.27, 3.85, 6.4, .75, t, -1);
+ });
+}
+
+/* ---------- footprints, labels, route ---------- */
+const FOOT = {byd_zone: 'byd_zone', stage: 'stage', audience: 'audience', vip_deck: 'vip_deck', byd_deck: 'byd_deck', bleach1: 'bleach1', bleach2: 'bleach2', media: 'media', food: 'food', sponsors: 'sponsors', lounge: 'lounge', byd_lounge: 'byd_lounge', zerrita: 'zerrita', shehzar: 'shehzar'};
+function buildFootprints() {
+ for (const k in FOOT) {
+  const z = CFG[k], zz = ZK[k];
+  const e = F.entities.add({polygon: {hierarchy: C.Cartesian3.fromDegreesArray(z.poly.flat()), material: col(zz.c, .28), classificationType: C.ClassificationType.BOTH}});
+  e.zone = k;
+ }
+}
+const SMALL = new Set(['vip_deck', 'media', 'pixel', 'zerrita', 'shehzar', 'entries', 'lounge']);
+function labelAt(k, lon, lat, h, text) {
+ const pos = C.Cartesian3.fromDegrees(lon, lat, h);
+ const e = LBL.entities.add({position: pos,
+  label: {text, font: '600 14px Archivo, Arial, sans-serif', fillColor: C.Color.WHITE, showBackground: true,
+   backgroundColor: col('#090c0f', .82), backgroundPadding: new C.Cartesian2(9, 6), verticalOrigin: C.VerticalOrigin.BOTTOM,
+   pixelOffset: new C.Cartesian2(0, -10), disableDepthTestDistance: Number.POSITIVE_INFINITY,
+   distanceDisplayCondition: new C.DistanceDisplayCondition(0, SMALL.has(k) ? 300 : 2200), scaleByDistance: new C.NearFarScalar(200, 1, 2000, .72)},
+  point: {pixelSize: 8, color: col(ZK[k] ? ZK[k].c : AC), outlineColor: C.Color.WHITE, outlineWidth: 2, disableDepthTestDistance: Number.POSITIVE_INFINITY,
+   distanceDisplayCondition: new C.DistanceDisplayCondition(0, 2200)}});
+ e.zone = k; return e;
+}
+let ROUTE_PTS = [];
+function buildRoute() {
+ const r = CFG.route; ROUTE_PTS = r;
+ const h = G._base;
+ const pos = C.Cartesian3.fromDegreesArray(r.flat());
+ const e = RT.entities.add({polyline: {positions: pos, width: 7, clampToGround: true, material: col(AC, .95), classificationType: C.ClassificationType.BOTH}});
+ e.zone = 'route';
+ // km markers
+ let acc = 0, next = 1000;
+ for (let i = 1; i < r.length; i++) {
+  const [, d] = bearing(r[i - 1], r[i]);
+  while (acc + d >= next) {
+   const f = (next - acc) / d, lon = r[i - 1][0] + f * (r[i][0] - r[i - 1][0]), lat = r[i - 1][1] + f * (r[i][1] - r[i - 1][1]);
+   const m = RT.entities.add({position: C.Cartesian3.fromDegrees(lon, lat, h + 6),
+    label: {text: (next / 1000) + ' km', font: '700 13px Archivo, Arial, sans-serif', fillColor: col('#06201a'), showBackground: true, backgroundColor: col(AC, .95),
+     backgroundPadding: new C.Cartesian2(7, 4), disableDepthTestDistance: Number.POSITIVE_INFINITY,
+     distanceDisplayCondition: new C.DistanceDisplayCondition(0, 16000), scaleByDistance: new C.NearFarScalar(500, 1, 12000, .6)}});
+   m.zone = 'route'; next += 1000;
+  }
+  acc += d;
+ }
+ const u = CFG.uturn;
+ const ue = RT.entities.add({position: C.Cartesian3.fromDegrees(u[0], u[1], (G.uturn ?? h) + 8),
+  label: {text: 'U-TURN · 10.5 km', font: '800 14px Archivo, Arial, sans-serif', fillColor: C.Color.WHITE, showBackground: true, backgroundColor: col('#e11d48', .95),
+   backgroundPadding: new C.Cartesian2(9, 5), disableDepthTestDistance: Number.POSITIVE_INFINITY, distanceDisplayCondition: new C.DistanceDisplayCondition(0, 20000)}});
+ ue.zone = 'route';
+}
+
+/* ---------- camera ---------- */
+const CENTER = {};
+function sphereOf(k) {
+ if (k === 'route') return C.BoundingSphere.fromPoints(C.Cartesian3.fromDegreesArray(CFG.route.flat(), C.Ellipsoid.WGS84).map(p => { const c = C.Cartographic.fromCartesian(p); return C.Cartesian3.fromRadians(c.longitude, c.latitude, G._base); }));
+ return new C.BoundingSphere(CENTER[k], 6);
+}
+function flyZone(k, dur = 2.2) {
+ const z = ZK[k]; const sph = sphereOf(k);
+ const range = k === 'route' ? sph.radius * 2.3 : z.r;
+ return new Promise(res => viewer.camera.flyToBoundingSphere(sph, {offset: new C.HeadingPitchRange(z.h * D2R, z.p * D2R, range), duration: dur, complete: res, cancel: res}));
+}
+function overview(dur = 2.4) {
+ const c = C.Cartesian3.fromDegrees(67.03605, 24.79795, G._base || 0);
+ return new Promise(res => viewer.camera.flyToBoundingSphere(new C.BoundingSphere(c, 10), {offset: new C.HeadingPitchRange(222 * D2R, -34 * D2R, 330), duration: dur, complete: res, cancel: res}));
+}
+
+/* ---------- UI ---------- */
+const $ = id => document.getElementById(id);
+function buildList() {
+ const groups = {Race: 'Race', BYD: 'BYD', Village: 'Race Village'};
+ let html = '';
+ for (const g in groups) {
+  html += `<div class="grp">${groups[g]}</div>`;
+  ZONES.filter(z => z.g === g).forEach(z => { html += `<button class="item" data-k="${z.k}"><span class="dot" style="background:${z.c}"></span>${z.n}</button>`; });
+ }
+ $('list').innerHTML = html;
+ $('list').querySelectorAll('.item').forEach(b => b.onclick = () => { stopTour(); select(b.dataset.k, true); if (innerWidth < 720) $('panel').classList.add('min'); });
+}
+function showCard(k) {
+ const z = ZK[k]; if (!z) return;
+ $('cg').textContent = z.g === 'Village' ? 'Race Village' : z.g;
+ $('ct').textContent = z.n; $('cd').textContent = z.d;
+ const c = CFG[k]; let meta = '';
+ if (c && c.len) meta += `<div><b>≈ ${Math.round(c.len)} × ${Math.round(c.wid)} m</b>footprint</div>`;
+ if (k === 'route') meta += `<div><b>21.1 km</b>out and back</div><div><b>10.5 km</b>to U-turn</div>`;
+ if (k === 'byd_zone') meta += `<div><b>6</b>cars on display</div>`;
+ if (k === 'pixel' || k === 'entries') meta += `<div><b>2</b>locations</div>`;
+ $('cm').innerHTML = meta; $('card').style.display = 'block';
+}
+function select(k, fly) {
+ document.querySelectorAll('.item').forEach(b => b.classList.toggle('sel', b.dataset.k === k));
+ showCard(k); if (fly) return flyZone(k);
+}
+$('cx').onclick = () => { $('card').style.display = 'none'; document.querySelectorAll('.item').forEach(b => b.classList.remove('sel')); };
+$('bOver').onclick = () => { stopTour(); overview(); };
+$('bRoute').onclick = () => { stopTour(); select('route', true); };
+$('mtoggle').onclick = () => $('panel').classList.toggle('min');
+function tog(id, ds) { $(id).onclick = () => { ds.show = !ds.show; $(id).classList.toggle('on', ds.show); }; }
+tog('tLab', LBL); tog('tFoot', F); tog('tRoute', RT);
+
+viewer.screenSpaceEventHandler.setInputAction(m => {
+ const p = scene.pick(m.position);
+ if (p && p.id && p.id.zone) { stopTour(); select(p.id.zone, false); }
+}, C.ScreenSpaceEventType.LEFT_CLICK);
+
+/* ---------- tour ---------- */
+const TOUR = [
+ ['arch', 'Start and finish under the BYD arch'],
+ ['byd_deck', 'BYD and VIP decks sit right on the finish line'],
+ ['bleach1', 'Spectator bleachers line the finish straight'],
+ ['byd_zone', 'The BYD Experience Zone, centre of the village'],
+ ['byd_lounge', 'BYD Lounge for guests and test-drive sign-ups'],
+ ['stage', 'Main stage with audience seating'],
+ ['sponsors', "Sponsors' activation row"],
+ ['food', 'Food area'],
+ ['route', 'The course: out along the coast to the 10.5 km U-turn']
+];
+let touring = false, orbitH = null;
+function orbit(k, ms) {
+ return new Promise(res => {
+  const z = ZK[k], sph = sphereOf(k), t0 = performance.now();
+  const range = k === 'route' ? sph.radius * 2.3 : z.r;
+  let h = z.h * D2R;
+  const step = () => {
+   if (!touring) { viewer.camera.lookAtTransform(C.Matrix4.IDENTITY); return res(); }
+   const t = performance.now() - t0; $('capb').style.width = Math.min(100, t / ms * 100) + '%';
+   h += k === 'route' ? 0.0006 : 0.0022;
+   viewer.camera.lookAt(sph.center, new C.HeadingPitchRange(h, z.p * D2R, range));
+   if (t < ms) orbitH = requestAnimationFrame(step); else { viewer.camera.lookAtTransform(C.Matrix4.IDENTITY); res(); }
+  };
+  orbitH = requestAnimationFrame(step);
+ });
+}
+async function playTour() {
+ touring = true; $('bTour').textContent = '■ Stop tour'; $('cap').style.display = 'block'; $('card').style.display = 'none';
+ for (let i = 0; i < TOUR.length && touring; i++) {
+  const [k, t] = TOUR[i];
+  $('capk').textContent = `${i + 1} / ${TOUR.length} · ${ZK[k].n}`; $('capt').textContent = t; $('capb').style.width = '0';
+  await flyZone(k, k === 'route' ? 3.2 : 2.4); if (!touring) break;
+  await orbit(k, k === 'route' ? 6500 : 5200);
+ }
+ if (touring) await overview();
+ stopTour();
+}
+function stopTour() {
+ touring = false; if (orbitH) cancelAnimationFrame(orbitH); viewer.camera.lookAtTransform(C.Matrix4.IDENTITY);
+ $('bTour').textContent = '▶ Play tour'; $('cap').style.display = 'none';
+}
+$('bTour').onclick = () => touring ? stopTour() : playTour();
+['wheel', 'pointerdown', 'touchstart'].forEach(ev => $('c').addEventListener(ev, () => { if (touring) stopTour(); }, {passive: true}));
+
+/* ---------- init ---------- */
+(async function init() {
+ try {
+  viewer.camera.setView({destination: C.Cartesian3.fromDegrees(67.0395, 24.8005, 450), orientation: {heading: 222 * D2R, pitch: -34 * D2R, roll: 0}});
+  if (!OFF) {
+   C.GoogleMaps.defaultApiKey = GKEY;
+   const ts = await C.createGooglePhotorealistic3DTileset();
+   scene.primitives.add(ts);
+   $('lmsg').textContent = 'Placing the race village on the ground…';
+   await new Promise(r => { const ok = () => { ts.allTilesLoaded.removeEventListener(ok); r(); }; ts.allTilesLoaded.addEventListener(ok); setTimeout(r, 9000); });
+  }
+  try { await document.fonts.load('800 40px Archivo'); } catch (e) {}
+  await sampleGround();
+  const tops = {};
+  tops.arch = buildArch();
+  tops.byd_deck = buildDeck('byd_deck', 'BYD', AC, false);
+  tops.vip_deck = buildDeck('vip_deck', 'VIP', '#f2c14e', false);
+  tops.media = buildDeck('media', 'MEDIA', '#ffffff', true);
+  tops.bleach1 = buildBleachers('bleach1'); tops.bleach2 = buildBleachers('bleach2');
+  tops.stage = buildStage(); buildAudience();
+  tops.byd_zone = buildBydZone();
+  tops.byd_lounge = buildMarquee('byd_lounge', 'BYD LOUNGE', AC);
+  tops.lounge = buildMarquee('lounge', 'LOUNGE', '#facc15', .85, .85);
+  tops.sponsors = buildSponsorRow();
+  tops.food = buildFood();
+  buildSmall();
+  buildFootprints(); buildRoute();
+  // centres + labels
+  for (const z of ZONES) {
+   let lon, lat, top = 5, g = G[z.k];
+   if (z.k === 'arch') { const [a, b] = CFG.arch.line; lon = (a[0] + b[0]) / 2; lat = (a[1] + b[1]) / 2; top = 8; }
+   else if (z.k === 'pixel') { [lon, lat] = CFG.pixel[0]; g = G.pixel0; top = 2.5; }
+   else if (z.k === 'entries') { [lon, lat] = CFG.entries[0]; g = G.entry0; top = 4.5; }
+   else if (z.k === 'route') continue;
+   else { lon = CFG[z.k].lon; lat = CFG[z.k].lat; top = (tops[z.k] && tops[z.k].top) || 3; }
+   g = Number.isFinite(g) ? g : G._base;
+   CENTER[z.k] = C.Cartesian3.fromDegrees(lon, lat, g + top * .5);
+   labelAt(z.k, lon, lat, g + top + 3, z.n);
+   if (z.k === 'pixel') labelAt('pixel', CFG.pixel[1][0], CFG.pixel[1][1], G.pixel1 + 5.5, z.n);
+   if (z.k === 'entries') labelAt('entries', CFG.entries[1][0], CFG.entries[1][1], G.entry1 + 7.5, z.n);
+  }
+  buildList();
+  $('loader').style.opacity = 0; setTimeout(() => $('loader').remove(), 700);
+  overview(3);
+  window.__ready = true;
+ } catch (e) {
+  console.error(e);
+  $('lmsg').innerHTML = 'Could not load the 3D map.<br><small>' + (e && e.message ? e.message : e) + '</small>';
+  document.querySelector('#loader .ring').style.display = 'none';
+ }
+})();
+</script>
+</body>
+</html>
