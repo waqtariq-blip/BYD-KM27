@@ -863,7 +863,7 @@ $('bTour').onclick = () => touring ? stopTour() : playTour();
   viewer.camera.setView({destination: C.Cartesian3.fromDegrees(67.0395, 24.8005, 450), orientation: {heading: 222 * D2R, pitch: -34 * D2R, roll: 0}});
   if (!OFF) {
    C.GoogleMaps.defaultApiKey = GKEY;
-   const ts = await C.createGooglePhotorealistic3DTileset({maximumScreenSpaceError: 16, dynamicScreenSpaceError: true, cacheBytes: 256 * 1024 * 1024, maximumCacheOverflowBytes: 128 * 1024 * 1024});
+   const ts = await C.createGooglePhotorealistic3DTileset(GKEY, {maximumScreenSpaceError: 16, dynamicScreenSpaceError: true, cacheBytes: 256 * 1024 * 1024, maximumCacheOverflowBytes: 128 * 1024 * 1024});
    scene.primitives.add(ts);
    // lighter tiles while the camera is moving, full detail once it stops
    viewer.camera.moveStart.addEventListener(() => { ts.maximumScreenSpaceError = 28; });
